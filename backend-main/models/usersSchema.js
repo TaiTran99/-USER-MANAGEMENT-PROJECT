@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
+const emailVerify = require('email-verify');
 
 const usersSchema = new mongoose.Schema({
     fname: {
@@ -21,6 +22,7 @@ const usersSchema = new mongoose.Schema({
                 throw Error("not valid email")
             }
         }
+        
     },
     mobile: {
         type: String,
@@ -49,7 +51,21 @@ const usersSchema = new mongoose.Schema({
     dateUpdated:Date
 });
 
+usersSchema.pre('save', function(next) {
+    const user = this;
+    emailVerify.verify(user.email, function(err, info) {
+        if (err) {
+            return next(err);
+        }
+        if (!info.success) {
+            return next(new Error('Email does not exist'));
+        }
+        next();
+    });
+});
+
 // model
 const users = new mongoose.model("users",usersSchema);
 
 module.exports = users;
+
